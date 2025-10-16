@@ -4,8 +4,8 @@
 #include <FastBot.h>
 
 // Настройки Wi-Fi
-const char* ssid = "2065-IoT";
-const char* password = "123123123";
+const char* ssid = "421";
+const char* password = "dfmnprof";
 
 // Настройки Telegram
 #define BOT_TOKEN "8165033611:AAG3HWYMpE06sJ7CScbxcCndfd13Nu5wq4k"  // Токен вашего бота
@@ -70,8 +70,7 @@ const char* htmlPage = R"rawliteral(
         }
         .button:hover { background-color: #45a049; }
         .status { font-size: 24px; margin-top: 20px; }
-        .moisture { font-size: 24px; margin-top: 20px; }
-        .temperature { font-size: 24px; margin-top: 20px; }
+        .moisture, .humidity, .temperature { font-size: 24px; margin-top: 20px; }
     </style>
     <script>
         function executeCommand(command) {
@@ -91,6 +90,7 @@ const char* htmlPage = R"rawliteral(
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('moisture').innerText = 'Влажность почвы: ' + data.soilMoisture;
+                    document.getElementById('humidity').innerText = 'Влажность воздуха: ' + data.humidity; // Добавлено
                     document.getElementById('temperature').innerText = 'Температура воздуха: ' + data.temperature;
                     document.getElementById('status').innerText = 'Статус: ' + data.status;
                     document.getElementById('status').style.color = data.color;
@@ -101,6 +101,7 @@ const char* htmlPage = R"rawliteral(
 <body>
     <h1>Управление поливом растений</h1>
     <div class="moisture" id="moisture">Влажность почвы: %SOIL_MOISTURE%</div>
+    <div class="humidity" id="humidity">Влажность воздуха: %HUMIDITY%</div> <!-- Добавлено -->
     <div class="temperature" id="temperature">Температура воздуха: %TEMPERATURE%</div>
     <div class="status" id="status" style="color: %COLOR%">Статус: %STATUS%</div>
     <button class="button" onclick="executeCommand('water')">Полив</button>
@@ -130,6 +131,7 @@ void handleRoot() {
     readSensors();
     String page = htmlPage;
     page.replace("%SOIL_MOISTURE%", String(soilMoisture).c_str());
+    page.replace("%HUMIDITY%", String(humidity).c_str()); // Замена на влажность воздуха
     page.replace("%TEMPERATURE%", String(temperature).c_str());
     String color = soilMoisture < 300 ? "red" : "green"; // Замените 300 на подходящее значение
     String status = soilMoisture < 300 ? "Сухо, нужно полить!" : "Влажно, все в порядке.";
@@ -139,10 +141,11 @@ void handleRoot() {
 }
 
 void handleStatus() {
-    readSensors();
+    readSensors(); // Обновим данные с датчиков
     String jsonResponse = "{";
     jsonResponse += "\"soilMoisture\":" + String(soilMoisture) + ",";
     jsonResponse += "\"temperature\":" + String(temperature) + ",";
+    jsonResponse += "\"humidity\":" + String(humidity) + ","; // Добавлено
     String color = soilMoisture < 300 ? "red" : "green"; // Замените 300 на подходящее значение
     String status = soilMoisture < 300 ? "Сухо, нужно полить!" : "Влажно, все в порядке.";
     jsonResponse += "\"status\":\"" + status + "\",";
@@ -236,8 +239,13 @@ void newMsg(FB_msg& msg) {
     String text = msg.text;
     Serial.println(text);
     if (text == String("/status")) {
-        bot.sendMessage("Влажность почвы: " + String(soilMoisture) + "\n" + "Температура воздуха: " + String(temperature) + "\n", CHAT_ID);
-        Serial.println("отправка: " + String("Влажность почвы: " + String(soilMoisture) + "\n" + "Температура воздуха: " + String(temperature) + "\n"));
+        readSensors(); // Обновите данные датчиков перед отправкой
+        bot.sendMessage("Влажность почвы: " + String(soilMoisture) +
+                        "\nТемпература воздуха: " + String(temperature) +
+                        "\nВлажность воздуха: " + String(humidity) + "\n", CHAT_ID);
+        Serial.println("отправка: " + String("Влажность почвы: " + String(soilMoisture) +
+                                            "\nТемпература воздуха: " + String(temperature) +
+                                            "\nВлажность воздуха: " + String(humidity) + "\n"));
     } 
     else if (text == String("/water")) {
         bot.sendMessage("Полив начат.", CHAT_ID);
