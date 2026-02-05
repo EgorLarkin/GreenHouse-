@@ -4,8 +4,8 @@
 #include <WiFiUdp.h>
 
 // ========== НАСТРОЙКИ СЕТИ ==========
-const char* ssid = "WIFI_SSID";
-const char* password = "PASSWORD";
+const char* ssid = "MTS_GPON_1BC5";
+const char* password = "UiY2VDYurp";
 
 // ========== НАСТРОЙКИ СЕРВЕРА ==========
 const int serverPort = 8888;
